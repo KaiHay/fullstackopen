@@ -1,10 +1,32 @@
 const express = require('express')
+const mongoose = require('mongoose')
 const app = express()
 var morgan = require('morgan')
 app.use(express.json())
 app.use(morgan('tiny'))
 
 app.use(express.static('dist'))
+
+const password= process.argv[2]
+const url = `mongodb+srv://kaihay168:${password}@cluster0.7e2n5pg.mongodb.net/phonebook?retryWrites=true&w=majority&appName=Cluster0`
+mongoose.set('strictQuery', false)
+mongoose.connect(url)
+const pbSchema= new mongoose.Schema({
+  id: String,
+  name: String,
+  number: String,
+})
+
+pbSchema.set('toJSON', {
+  transform: (document, returnedObject) => {
+    returnedObject.id = returnedObject._id.toString()
+    delete returnedObject._id
+    delete returnedObject._v
+  }
+})
+const Contact= mongoose.model('Contact',pbSchema)
+
+
 let persons = [
     { 
       "id": "1",
@@ -27,12 +49,15 @@ let persons = [
       "number": "39-23-6423122"
     }
 ]
+
   app.get('/', (request, response) => {
     response.send('<h1>Hello World!</h1>')
   })
   
   app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Contact.find({}).then(contacts=>{
+    response.json(contacts)
+    })
   })
 
   app.get('/info',(request,response)=> {
